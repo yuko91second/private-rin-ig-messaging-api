@@ -1,7 +1,6 @@
 import requests
-from fastapi import APIRouter, Response, Request, Query, status
+from fastapi import APIRouter, Response, Query, status
 from pydantic import BaseModel
-from typing import Optional
 from ..config import settings
 
 
@@ -24,9 +23,12 @@ def sendCustomerAMessage(page_id, response, page_token, psid):
     response = requests.post(url)
     return response.json()
 
+
 @router.get("/webhook/messaging-webhook")
 async def get_webhook(hub_mode: str = Query(..., alias="hub.mode"), hub_verify_token: str = Query(..., alias="hub.verify_token"), hub_challenge: str = Query(..., alias="hub.challenge")):
     if hub_mode and hub_verify_token:
+        print('> hub_mode:', hub_mode)
+        print('> hub_verify_token:', hub_verify_token)
         if hub_mode == 'subscribe' and hub_verify_token == 'rin080902':
             return Response(content=hub_challenge, status_code=status.HTTP_200_OK)
         else:
@@ -43,8 +45,7 @@ async def post_webhook(body: InstagramMessage):
                 recipient_id = output_message['recipient']['id']
                 message_text = output_message['message']['text']
                 response = "これは応答です"
-                sendCustomerAMessage(
-                    FACEBOOK_PAGE_ID, response, FACEBOOK_PAGE_ACCESS_TOKEN, sender_id)
+                sendCustomerAMessage(FACEBOOK_PAGE_ID, response, FACEBOOK_PAGE_ACCESS_TOKEN, sender_id)
         return Response(content='EVENT_RECEIVED', status_code=status.HTTP_200_OK)
     else:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
