@@ -38,6 +38,7 @@ async def get_webhook(hub_mode: str = Query(..., alias="hub.mode"), hub_verify_t
 
 @router.post("/webhook/messaging-webhook")
 async def post_webhook(body: InstagramMessage):
+    print('> body:', body)
     if body.object == 'instagram':
         for entry in body.entry:
             for output_message in entry['messaging']:
