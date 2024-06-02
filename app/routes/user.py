@@ -60,10 +60,11 @@ async def post_webhook(body: InstagramMessage):
             text = change_value_obj['text']
             print(f'> {sender_username}から{media_type}(投稿id: {media_id})に「{text}」という{change_field}メッセージが送られました。')
             response = "これは応答です"
-            sendCustomerAMessage(FACEBOOK_PAGE_ID, response, FACEBOOK_PAGE_ACCESS_TOKEN, sender_id)
+            # sendCustomerAMessage(FACEBOOK_PAGE_ID, response, FACEBOOK_PAGE_ACCESS_TOKEN, sender_id)
+            return Response(content='COMMENT_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
         if change_field == 'messages':
-            return {'message': 'Received message.'}
+            return Response(content='MESSAGE_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
 
-        return Response(content='EVENT_RECEIVED', status_code=status.HTTP_200_OK)
+        # return Response(content='EVENT_RECEIVED', status_code=status.HTTP_200_OK)
     else:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
