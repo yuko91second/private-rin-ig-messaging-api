@@ -66,7 +66,12 @@ async def post_webhook(body: WebhookEvent):
                 # sendCustomerAMessage(FACEBOOK_PAGE_ID, response, FACEBOOK_PAGE_ACCESS_TOKEN, sender_id)
                 return Response(content='COMMENT_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
         if 'messaging' in entry_obj:
-            return Response(content='MESSAGE_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
+            messaging_whole_obj = entry_obj['messaging'][0]
+            message_obj = messaging_whole_obj['message']
+            if 'is_deleted' not in message_obj:
+                return Response(content='MESSAGE_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
+            else:
+                return Response(content='MESSAGE_DELETE_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
         # return Response(content='EVENT_RECEIVED', status_code=status.HTTP_200_OK)
     else:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
