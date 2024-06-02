@@ -7,7 +7,7 @@ from ..config import settings
 
 
 router = APIRouter(
-    tags=['User'],
+    tags=['Webhook'],
 )
 
 FACEBOOK_PAGE_ID = settings.facebook_page_id
@@ -43,28 +43,30 @@ async def post_webhook(body: InstagramMessage):
         raise TypeError(
             f'Object of type {obj.__class__.__name__} is not JSON serializable')
 
-    print('> body:', json.dumps(body, default=custom_encoder, indent=2))
+    # print('> body:', json.dumps(body, default=custom_encoder, indent=2))
     if body.object == 'instagram':
         entry_obj = body.entry[0]
         # unix_time = entry_obj['time']
-        changes_obg = entry_obj['changes'][0]
-        change_field = changes_obg['field']
-        if change_field == 'comments':
-            change_value_obj = changes_obg['value']
-            sender_obj = change_value_obj['from']
-            media_obj = change_value_obj['media']
-            sender_id = sender_obj['id']
-            sender_username = sender_obj['username']
-            media_id = media_obj['id']
-            media_type = media_obj['media_product_type']
-            text = change_value_obj['text']
-            print(f'> {sender_username}から{media_type}(投稿id: {media_id})に「{text}」という{change_field}メッセージが送られました。')
-            response = "これは応答です"
-            # sendCustomerAMessage(FACEBOOK_PAGE_ID, response, FACEBOOK_PAGE_ACCESS_TOKEN, sender_id)
-            return Response(content='COMMENT_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
-        if change_field == 'messages':
+        # changesプロパティが存在しない場合は例外処理を行う
+        if 'changes' in entry_obj:
+            changes_obj = entry_obj['changes'][0]
+            change_field_str = changes_obj['field']
+            if changes_obj and change_field_str == 'comments':
+                change_field = changes_obj['field']
+                change_value_obj = changes_obj['value']
+                sender_obj = change_value_obj['from']
+                media_obj = change_value_obj['media']
+                sender_id = sender_obj['id']
+                sender_username = sender_obj['username']
+                media_id = media_obj['id']
+                media_type = media_obj['media_product_type']
+                text = change_value_obj['text']
+                # print(f'> {sender_username}から{media_type}(投稿id: {media_id})に「{text}」という{change_field}メッセージが送られました。')
+                # response = "これは応答です"
+                # sendCustomerAMessage(FACEBOOK_PAGE_ID, response, FACEBOOK_PAGE_ACCESS_TOKEN, sender_id)
+                return Response(content='COMMENT_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
+        if 'messaging' in entry_obj:
             return Response(content='MESSAGE_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
-
         # return Response(content='EVENT_RECEIVED', status_code=status.HTTP_200_OK)
     else:
         return Response(status_code=status.HTTP_404_NOT_FOUND)

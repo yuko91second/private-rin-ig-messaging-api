@@ -1,13 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import user
+from .routes import webhook
 
 
 app = FastAPI()
 
 origins = [
     'http://localhost:8000',
-    'https://render-test-api-byr8.onrender.com'
 ]
 
 app.add_middleware(
@@ -18,7 +17,7 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.include_router(user.router)
+app.include_router(webhook.router)
 
 @app.get('/')
 async def index():
