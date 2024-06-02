@@ -2,7 +2,7 @@ import json
 import requests
 from fastapi import APIRouter, Response, Query, status
 from pydantic import BaseModel
-from ..schemas import InstagramMessage
+from ..schemas import WebhookEvent
 from ..config import settings
 
 
@@ -36,14 +36,14 @@ async def get_webhook(hub_mode: str = Query(..., alias="hub.mode"), hub_verify_t
 
 
 @router.post("/webhook/messaging-webhook")
-async def post_webhook(body: InstagramMessage):
+async def post_webhook(body: WebhookEvent):
     def custom_encoder(obj):
-        if isinstance(obj, BaseModel):
+        if isinstance(obj, WebhookEvent):
             return obj.model_dump()
         raise TypeError(
             f'Object of type {obj.__class__.__name__} is not JSON serializable')
 
-    # print('> body:', json.dumps(body, default=custom_encoder, indent=2))
+    print('> body:', json.dumps(body, default=custom_encoder, indent=2))
     if body.object == 'instagram':
         entry_obj = body.entry[0]
         # unix_time = entry_obj['time']
