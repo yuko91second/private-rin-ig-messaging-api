@@ -38,7 +38,7 @@ async def get_webhook(hub_mode: str = Query(..., alias="hub.mode"), hub_verify_t
 @router.post("/webhook/messaging-webhook")
 async def post_webhook(body: WebhookEvent):
     def custom_encoder(obj):
-        if isinstance(obj, WebhookEvent):
+        if isinstance(obj, BaseModel):
             return obj.model_dump()
         raise TypeError(
             f'Object of type {obj.__class__.__name__} is not JSON serializable')
