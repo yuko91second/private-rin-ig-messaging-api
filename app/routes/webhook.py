@@ -1,9 +1,12 @@
 import json
+import datetime
 import requests
-from fastapi import APIRouter, Response, Query, status
+from fastapi import APIRouter, Response, Query, status, BackgroundTasks
 from pydantic import BaseModel
+from .. import utils
 from ..schemas import WebhookEvent
 from ..config import settings
+from ..methods.method_with_google_sheets_api import SheetsMethods
 
 
 router = APIRouter(
@@ -13,6 +16,85 @@ router = APIRouter(
 FACEBOOK_PAGE_ID = settings.facebook_page_id
 FACEBOOK_PAGE_ACCESS_TOKEN = settings.facebook_page_access_token
 FACEBOOK_VERIFY_TOKEN = settings.facebook_verify_token
+sheets_methods = SheetsMethods()
+
+
+def get_response_message(sender_name: str, comment_text: str):
+    today_dt_normal = datetime.datetime.now()
+    today_dt_jst = utils.convert_timezone_to_jst_forced(today_dt_normal)
+    response_rows_list_per_zodiac_sign = sheets_methods.get_response_rows_list_per_zodiac_sign()
+    # ! response_rows_list_per_zodiac_signは二重配列になっているので注意！
+    sender_zodiac_sign_id_num, sender_zodiac_sign_name = utils.identify_sender_zodiac_sign(comment_text)
+    target_response_row = response_rows_list_per_zodiac_sign[sender_zodiac_sign_id_num - 1]
+    if sender_zodiac_sign_name != target_response_row[1]:
+        # 正しい配列を取得しているかチェック
+        return Response(content='ZODIAC_SIGN_NOT_MATCH', status_code=status.HTTP_200_OK)
+    today_color_name = target_response_row[3]
+    today_color_name_ja = target_response_row[4]
+    random_four_numbers_for_color_means = utils.get_random_four_numbers()
+    today_color_means = ''
+    for number in random_four_numbers_for_color_means:
+        today_color_means += target_response_row[number] + '、'
+    today_color_means = today_color_means.rstrip('、')
+    today_item_name = target_response_row[12]
+    today_item_description = target_response_row[13]
+    fixed_form_sentences_list = sheets_methods.get_fixed_form_sentences()
+    now_hour_number = utils.obtain_now_hour_number(today_dt_jst)
+    today_date_str = utils.obtain_today_date_str(today_dt_jst)
+    greeting_remarks = ''
+    concluding_remarks = ''
+    for sentence_row in fixed_form_sentences_list:
+        if now_hour_number < int(sentence_row[0]):
+            greeting_remarks = sentence_row[1]
+            concluding_remarks = sentence_row[2]
+            break
+    response_message = f'{sender_name}さん、\n{greeting_remarks}\n【{sender_zodiac_sign_name}】({today_date_str})\n\n《今日のラッキーカラー🎨》\n◉{today_color_name}({today_color_name_ja})\n{today_color_means}\n\n《今日のラッキーアイテム🎁》\n◉{today_item_name}\n{today_item_description}\n{concluding_remarks}'
+    return response_message
+
+
+def send_dm(comment_id, username, message):
+    # * DM送信用関数
+    response_msg = get_response_message(username, message)
+    url = f'https://graph.facebook.com/v20.0/{FACEBOOK_PAGE_ID}/messages'
+    params = {
+        'recipient': {
+            'comment_id': comment_id
+        },
+        'message': {
+            'text': response_msg
+        },
+        'access_token': FACEBOOK_PAGE_ACCESS_TOKEN
+    }
+    try:
+        response = requests.post(url, json=params)
+        if response.status_code == 200:
+            print("Direct message sent successfully.")
+        else:
+            print(
+                f"Failed to send direct message. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+def reply_to_comment_on_post(comment_id, username, comment_text):
+    zodiac_sign_id_num, _ = utils.identify_sender_zodiac_sign(comment_text)
+    if zodiac_sign_id_num == 0:
+        reply_msg = utils.obtain_simple_reply_message(username)
+    else:
+        reply_msg = utils.obtain_lucky_reply_message(username)
+    url = f'https://graph.facebook.com/v20.0/{comment_id}/replies?message={reply_msg}'
+    params = {
+        'access_token': FACEBOOK_PAGE_ACCESS_TOKEN
+    }
+    try:
+        response = requests.post(url, json=params)
+        if response.status_code == 200:
+            print("Reply comment sent successfully.")
+        else:
+            print(
+                f"Failed to reply comment. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 def sendCustomerAMessage(page_id, response, page_token, psid):
     new_response = response.replace("", r"\'")
@@ -36,7 +118,7 @@ async def get_webhook(hub_mode: str = Query(..., alias="hub.mode"), hub_verify_t
 
 
 @router.post("/webhook/messaging-webhook")
-async def post_webhook(body: WebhookEvent):
+async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
     def custom_encoder(obj):
         if isinstance(obj, BaseModel):
             return obj.model_dump()
@@ -46,24 +128,23 @@ async def post_webhook(body: WebhookEvent):
     print('> body:', json.dumps(body, default=custom_encoder, indent=2))
     if body.object == 'instagram':
         entry_obj = body.entry[0]
-        # unix_time = entry_obj['time']
-        # changesプロパティが存在しない場合は例外処理を行う
         if 'changes' in entry_obj:
             changes_obj = entry_obj['changes'][0]
             change_field_str = changes_obj['field']
             if changes_obj and change_field_str == 'comments':
-                change_field = changes_obj['field']
-                change_value_obj = changes_obj['value']
-                sender_obj = change_value_obj['from']
-                media_obj = change_value_obj['media']
-                sender_id = sender_obj['id']
-                sender_username = sender_obj['username']
-                media_id = media_obj['id']
-                media_type = media_obj['media_product_type']
-                text = change_value_obj['text']
-                # print(f'> {sender_username}から{media_type}(投稿id: {media_id})に「{text}」という{change_field}メッセージが送られました。')
-                # response = "これは応答です"
-                # sendCustomerAMessage(FACEBOOK_PAGE_ID, response, FACEBOOK_PAGE_ACCESS_TOKEN, sender_id)
+                change_data = changes_obj['value']
+                sender_user_name = change_data['from']['username']
+                media_product_type = change_data['media']['media_product_type']
+                comment_id = change_data['id']
+                comment_text = change_data['text']
+                # ! ↓本番環境で使用する際にこの条件式を変更する！
+                if (sender_user_name == 'nnn888yyy' or sender_user_name == 'yamayuucc') and media_product_type == 'FEED':
+                    already_made_a_comment = sheets_methods.whether_already_made_a_comment(sender_user_name)
+                    if already_made_a_comment:
+                        return Response(content='ALREADY_MADE_A_COMMENT', status_code=status.HTTP_200_OK)
+                    send_dm(comment_id, sender_user_name, comment_text)
+                    reply_to_comment_on_post(comment_id, sender_user_name, comment_text)
+                    bg_tasks.add_task(sheets_methods.insert_username_on_recipient_sheet, sender_user_name)
                 return Response(content='COMMENT_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
         if 'messaging' in entry_obj:
             messaging_whole_obj = entry_obj['messaging'][0]
