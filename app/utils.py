@@ -40,7 +40,7 @@ def convert_timezone_to_jst_forced(target_dt: datetime.datetime) -> datetime.dat
     if target_dt.tzinfo == jst_zone:
         # タイムゾーンがJSTの場合はそのまま返す
         return target_dt
-    elif target_dt.tzinfo == timezone.utc or (target_dt.tzinfo is not None and target_dt.tzinfo.utcoffset(target_dt) == timezone.utc.utcoffset(target_dt)):
+    elif target_dt.tzinfo == timezone.utc or (target_dt.tzinfo is not None and target_dt.tzinfo.utcoffset() == timezone.utc.utcoffset()): # type: ignore
         # タイムゾーンがUTCの場合は9時間進めてJSTに変換して返す
         target_dt = target_dt + datetime.timedelta(hours=9)
         target_dt.astimezone(jst_zone)
