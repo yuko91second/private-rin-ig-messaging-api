@@ -137,8 +137,8 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
                 media_product_type = change_data['media']['media_product_type']
                 comment_id = change_data['id']
                 comment_text = change_data['text']
-                # ! ↓本番環境で使用する際にこの条件式を変更する！
-                if (sender_user_name == 'nnn888yyy' or sender_user_name == 'yamayuucc') and media_product_type == 'FEED':
+                # if (sender_user_name == 'nnn888yyy' or sender_user_name == 'yamayuucc') and media_product_type == 'FEED':
+                if media_product_type == 'FEED':
                     already_made_a_comment = sheets_methods.whether_already_made_a_comment(sender_user_name)
                     if already_made_a_comment:
                         return Response(content='ALREADY_MADE_A_COMMENT', status_code=status.HTTP_200_OK)

@@ -107,10 +107,10 @@ def obtain_simple_reply_message(username: str):
 
 def obtain_lucky_reply_message(username: str):
     msg_list = [
-        f'@{username} コメントありがとうございます♡DM送らせていただきましたのでご確認くださいね🍀',
+        f'@{username} コメントありがとうございます♡DM送らせていただきましたので、ご確認くださいね🍀',
         f'@{username} コメントありがとうございます！DM送らせていただきました💌^^',
-        f'@{username} コメントありがとうございます💗DM送りましたのでご確認くださいね♪',
-        f'@{username} コメントありがとうございます✨DM送りましたのでご確認くださいね♡',
+        f'@{username} コメントありがとうございます💗DM送りましたので、ご確認くださいね♪',
+        f'@{username} コメントありがとうございます✨DM送りましたので、ご確認くださいね♡',
     ]
     # * ランダムにメッセージを1つ取得
     random_msg = random.choice(msg_list)
