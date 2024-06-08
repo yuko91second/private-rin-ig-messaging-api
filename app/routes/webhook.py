@@ -1,6 +1,7 @@
 import json
-import datetime
 import requests
+import datetime
+from datetime import timezone
 from fastapi import APIRouter, Response, Query, status, BackgroundTasks
 from pydantic import BaseModel
 from .. import utils
@@ -20,7 +21,7 @@ sheets_methods = SheetsMethods()
 
 
 def get_response_message(sender_name: str, comment_text: str):
-    today_dt_normal = datetime.datetime.now()
+    today_dt_normal = datetime.datetime.now(timezone.utc)
     today_dt_jst = utils.convert_timezone_to_jst_forced(today_dt_normal)
     response_rows_list_per_zodiac_sign = sheets_methods.get_response_rows_list_per_zodiac_sign()
     # ! response_rows_list_per_zodiac_signは二重配列になっているので注意！
