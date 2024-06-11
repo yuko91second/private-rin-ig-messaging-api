@@ -86,10 +86,10 @@ def identify_sender_zodiac_sign(comment_text: str):
     ]
     for sign in sign_range:
         for i, sign_name in enumerate(sign):
-            if i == 5:
+            if i == 3:
                 break
             if sign_name in comment_text:
-                return sign[5], sign[0]
+                return sign[3], sign[0]
     return 0, 'unknown'
 
 
