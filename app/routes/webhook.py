@@ -4,6 +4,7 @@ import datetime
 from datetime import timezone
 from fastapi import APIRouter, Response, Query, status, BackgroundTasks
 from pydantic import BaseModel
+from typing import Any
 from .. import utils
 from ..schemas import WebhookEvent
 from ..config import settings
@@ -127,14 +128,19 @@ async def get_webhook(hub_mode: str = Query(..., alias="hub.mode"), hub_verify_t
     return Response(status_code=status.HTTP_400_BAD_REQUEST)
 
 
+def custom_encoder(obj: Any) -> Any:
+    if isinstance(obj, BaseModel):
+        return obj.model_dump()  # type: ignore
+    raise TypeError(f'Object of type {obj.__class__.__name__} is not JSON serializable')
+
+
 @router.post("/webhook/messaging-webhook")
 async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
-    def custom_encoder(obj):
-        if isinstance(obj, BaseModel):
-            return obj.model_dump() # type: ignore
-        raise TypeError(f'Object of type {obj.__class__.__name__} is not JSON serializable')
-
-    print('> body:', json.dumps(body, default=custom_encoder, indent=2))
+    try:
+        print('> body:', json.dumps(body, default=custom_encoder, indent=2))
+    except TypeError as e:
+        print(f'Error in json.dumps: {e}')
+        raise
     if body.object == 'instagram':
         entry_obj = body.entry[0]
         if 'changes' in entry_obj:
@@ -147,6 +153,9 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
                 comment_id = change_data['id']
                 comment_text = change_data['text']
                 # if (sender_user_name == 'nnn888yyy' or sender_user_name == 'yamayuucc') and media_product_type == 'FEED':
+                if sender_user_name == 'rin__uranai':
+                    print('> Detected my own comments and passed the process.')
+                    return Response(content='THROUGH_EVENT_DUE_TO_DETECTING_MYSELF', status_code=status.HTTP_200_OK)
                 if media_product_type == 'FEED':
                     already_made_a_comment = sheets_methods.whether_already_made_a_comment(sender_user_name)
                     if already_made_a_comment:
