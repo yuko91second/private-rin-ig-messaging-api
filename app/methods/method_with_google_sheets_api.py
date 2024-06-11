@@ -11,8 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parent))
 class SheetsMethods:
     def __init__(self):
         # * 環境設定から取得した相対パスを絶対パスに変換
-        credentials_path = Path(__file__).resolve(
-        ).parent / settings.google_sheets_credentials_path
+        credentials_path = Path(__file__).resolve().parent / settings.google_sheets_credentials_path
         # * 読み込みエラーを避けるために絶対パスを使用
         self.credentials_file = str(credentials_path)
 
@@ -25,8 +24,7 @@ class SheetsMethods:
             'https://www.googleapis.com/auth/spreadsheets',
             'https://www.googleapis.com/auth/drive'
         ]
-        credentials = Credentials.from_service_account_file(
-            self.credentials_file, scopes=scopes)
+        credentials = Credentials.from_service_account_file(self.credentials_file, scopes=scopes)
         return gspread.authorize(credentials)
 
     def _get_workbook(self):

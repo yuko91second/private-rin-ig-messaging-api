@@ -71,8 +71,7 @@ def send_dm(comment_id, username, message):
         if response.status_code == 200:
             print("Direct message sent successfully.")
         else:
-            print(
-                f"Failed to send direct message. Status code: {response.status_code}")
+            print(f"Failed to send direct message. Status code: {response.status_code}")
     except Exception as e:
         print(f"An error occurred: {e}")
 
@@ -92,8 +91,7 @@ def reply_to_comment_on_post(comment_id, username, comment_text):
         if response.status_code == 200:
             print("Reply comment sent successfully.")
         else:
-            print(
-                f"Failed to reply comment. Status code: {response.status_code}")
+            print(f"Failed to reply comment. Status code: {response.status_code}")
     except Exception as e:
         print(f"An error occurred: {e}")
 
@@ -122,9 +120,8 @@ async def get_webhook(hub_mode: str = Query(..., alias="hub.mode"), hub_verify_t
 async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
     def custom_encoder(obj):
         if isinstance(obj, BaseModel):
-            return obj.model_dump()
-        raise TypeError(
-            f'Object of type {obj.__class__.__name__} is not JSON serializable')
+            return obj.model_dump() # type: ignore
+        raise TypeError(f'Object of type {obj.__class__.__name__} is not JSON serializable')
 
     print('> body:', json.dumps(body, default=custom_encoder, indent=2))
     if body.object == 'instagram':
