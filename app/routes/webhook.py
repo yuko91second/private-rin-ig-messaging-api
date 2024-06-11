@@ -57,7 +57,7 @@ def send_dm(comment_id, username, message):
     # * DM送信用関数
     response_msg = get_response_message(username, message)
     url = f'https://graph.facebook.com/v20.0/{FACEBOOK_PAGE_ID}/messages'
-    params = {
+    data = {
         'recipient': {
             'comment_id': comment_id
         },
@@ -67,33 +67,44 @@ def send_dm(comment_id, username, message):
         'access_token': FACEBOOK_PAGE_ACCESS_TOKEN
     }
     try:
-        response = requests.post(url, json=params)
+        response = requests.post(url, json=data)
         if response.status_code == 200:
             print("Direct message sent successfully.")
         else:
             print(f"Failed to send direct message. Status code: {response.status_code}")
+            print(f"Response content: {response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while sending the direct message (RequestException): {e}")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An unexpected error occurred while sending the direct message: {e}")
 
 
 def reply_to_comment_on_post(comment_id, username, comment_text):
+    # * コメントへのリプライ用関数
     zodiac_sign_id_num, _ = utils.identify_sender_zodiac_sign(comment_text)
     if zodiac_sign_id_num == 0:
         reply_msg = utils.obtain_simple_reply_message(username)
     else:
         reply_msg = utils.obtain_lucky_reply_message(username)
-    url = f'https://graph.facebook.com/v20.0/{comment_id}/replies?message={reply_msg}'
+    url = f'https://graph.facebook.com/v20.0/{comment_id}/replies'
     params = {
         'access_token': FACEBOOK_PAGE_ACCESS_TOKEN
     }
+    data = {
+        'message': reply_msg
+    }
     try:
-        response = requests.post(url, json=params)
+        response = requests.post(url, params=params, json=data)
         if response.status_code == 200:
             print("Reply comment sent successfully.")
         else:
             print(f"Failed to reply comment. Status code: {response.status_code}")
+            print(f"Response content: {response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while replying to the comment (RequestException): {e}")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An unexpected error occurred while replying to the comment: {e}")
+
 
 def sendCustomerAMessage(page_id, response, page_token, psid):
     new_response = response.replace("", r"\'")
