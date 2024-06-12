@@ -101,6 +101,18 @@ def reply_to_comment_on_post(comment_id, username, comment_text):
         else:
             print(f"Failed to reply comment. Status code: {response.status_code}")
             print(f"Response content: {response.text}")
+            response_dict = json.loads(response.text)
+            if response.status_code == 400 and 'error' in response_dict and response_dict['error']['message'] == 'This API call does not support the requested response format' and response_dict['error']['code'] == 20 and response_dict['error']['error_subcode'] == 1772179:
+                # * メンションNGのエラーの場合、メンション形式じゃないリプライを再送信
+                print('Retry replies without mention.')
+                reply_msg = utils.obtain_simple_reply_message(username, mention_allowed=False)
+                data = { 'message': reply_msg }
+                response = requests.post(url, params=params, json=data)
+                if response.status_code == 200:
+                    print("Reply comment sent successfully.")
+                else:
+                    print(f"Failed to reply comment. Status code: {response.status_code}")
+                    print(f"Response content: {response.text}")
     except requests.exceptions.RequestException as e:
         print(f"An error occurred while replying to the comment (RequestException): {e}")
     except Exception as e:
