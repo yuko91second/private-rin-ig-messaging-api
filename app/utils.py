@@ -95,10 +95,10 @@ def identify_sender_zodiac_sign(comment_text: str):
 
 def obtain_simple_reply_message(username: str):
     msg_list = [
-        f'@{username} コメントありがとうございます！今日も頑張りましょうねっ💗^^',
-        f'@{username} コメントありがとうございます♡ステキな1日になりますように✨',
-        f'@{username} コメントありがとうございます！幸せがたくさん訪れますように🍀',
-        f'@{username} コメントありがとうございます！充実した1日をお過ごしくださいね🌈',
+        f'{username}さん、コメントありがとうございます！今日も頑張りましょうねっ💗^^',
+        f'{username}さん、コメントありがとうございます♡ステキな1日になりますように✨',
+        f'{username}さん、コメントありがとうございます！幸せがたくさん訪れますように🍀',
+        f'{username}さん、コメントありがとうございます！充実した1日をお過ごしくださいね🌈',
     ]
     # * ランダムにメッセージを1つ取得
     random_msg = random.choice(msg_list)
