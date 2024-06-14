@@ -27,6 +27,9 @@ def get_response_message(sender_name: str, comment_text: str):
     response_rows_list_per_zodiac_sign = sheets_methods.get_response_rows_list_per_zodiac_sign()
     # ! response_rows_list_per_zodiac_signは二重配列になっているので注意！
     sender_zodiac_sign_id_num, sender_zodiac_sign_name = utils.identify_sender_zodiac_sign(comment_text)
+    if sender_zodiac_sign_id_num == 0 and sender_zodiac_sign_name == 'unknown':
+        print('No zodiac sign detected in the comment.')
+        return Response(content='ZODIAC_SIGN_NOT_DETECTED', status_code=status.HTTP_200_OK)
     target_response_row = response_rows_list_per_zodiac_sign[sender_zodiac_sign_id_num - 1]
     if sender_zodiac_sign_name != target_response_row[1]:
         # 正しい配列を取得しているかチェック
