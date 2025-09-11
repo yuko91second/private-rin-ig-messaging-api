@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: rin-instagram-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: FACEBOOK_PAGE_ID
+        value: 128170000177681
+      - key: FACEBOOK_PAGE_ACCESS_TOKEN
+        value: EAAM4sCOqR98BPW7rD2uWU316HR4jX9YTj11CKBh7nH3ZAIFet8imJZATQAU2IKiM5s6qKTuZAbuLeSt6PXiO7jJjESCr8t3iDvKFn5kEtyKC9fld3fkZC9MrSKLTQDwVdDCSgPLjl2Em3JLtSUGE5hdMFwZAaE6g334SeCX8xCX3wAGzTneJSsxKJgguwkgGb7IC11Lh78NCwToFSACyWpkYZD
+      - key: FACEBOOK_VERIFY_TOKEN
+        value: rin080902
+      - key: GOOGLE_SHEETS_CREDENTIALS_PATH
+        value: "./rin-hp-crud-01-66c3505ccd9c.json"
+      - key: GOOGLE_SHEETS_SPREAD_SHEET_KEY
+        value: "1iaK0si5CniF3jaitvroSm0RAirM3jOLNZQDo7HU9aK0"

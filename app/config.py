@@ -1,8 +1,8 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    facebook_page_id: str = '613101857342580'
-    facebook_page_access_token: str = 'EAAM4sCOqR98BO8ceLdgSUbGTtl4ATfxoAOAMrLcPZAWm0ptNTPZCYPz1OTTThZB5fZAxkUiIX76oYEOE8ZAfgknDnIDghIY2oF5ZC6fcURFPBWWyeYXoocXAXCbEyXXhhZCGZAe3ZAZAwGVHAKZBxW0l59PNHnFh5dH8biL9yvFFFcq8DBQ7LLNNXQcJoa2krBbmjGE1mZAUxyf1jTZAKBlMZD'
+    facebook_page_id: str = '128170000177681'
+    facebook_page_access_token: str = 'EAAM4sCOqR98BPW7rD2uWU316HR4jX9YTj11CKBh7nH3ZAIFet8imJZATQAU2IKiM5s6qKTuZAbuLeSt6PXiO7jJjESCr8t3iDvKFn5kEtyKC9fld3fkZC9MrSKLTQDwVdDCSgPLjl2Em3JLtSUGE5hdMFwZAaE6g334SeCX8xCX3wAGzTneJSsxKJgguwkgGb7IC11Lh78NCwToFSACyWpkYZD'
     facebook_verify_token: str = 'rin080902'
     google_sheets_credentials_path: str = 'default_value'
     google_sheets_spread_sheet_key: str = 'default_value'
