@@ -1,4 +1,7 @@
 import gspread
+import os
+import json
+import base64
 from google.oauth2.service_account import Credentials
 from ..config import settings
 from pathlib import Path
@@ -14,9 +17,18 @@ class SheetsMethods:
             'https://www.googleapis.com/auth/spreadsheets',
             'https://www.googleapis.com/auth/drive'
         ]
-        # シンプルにファイルから読み込む
-        credentials_path = Path(__file__).resolve().parent / settings.google_sheets_credentials_path
-        credentials = Credentials.from_service_account_file(str(credentials_path), scopes=scopes)
+        
+        # 環境変数からBase64エンコードされた認証情報を取得
+        if os.getenv('GOOGLE_SHEETS_CREDENTIALS_BASE64'):
+            credentials_base64 = os.getenv('GOOGLE_SHEETS_CREDENTIALS_BASE64')
+            credentials_json = base64.b64decode(credentials_base64).decode('utf-8')
+            credentials_info = json.loads(credentials_json)
+            credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
+        # ローカル開発用：ファイルから読み込む
+        else:
+            credentials_path = Path(__file__).resolve().parent / settings.google_sheets_credentials_path
+            credentials = Credentials.from_service_account_file(str(credentials_path), scopes=scopes)
+        
         return gspread.authorize(credentials)
 
     def _get_workbook(self):

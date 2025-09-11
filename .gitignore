@@ -3,3 +3,9 @@ venv/
 .env
 *.db
 .DS_Store
+
+# Google Service Account Credentials
+app/methods/rin-hp-crud-01-*.json
+
+# Test files
+test_*.py
