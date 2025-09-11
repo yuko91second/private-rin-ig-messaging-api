@@ -32,6 +32,18 @@ class SheetsMethods:
                 print(f"[DEBUG] JSON length: {len(credentials_json) if credentials_json else 0}")
                 credentials_info = json.loads(credentials_json)
                 print(f"[DEBUG] Parsed JSON keys: {list(credentials_info.keys()) if credentials_info else 'None'}")
+                
+                # private_keyの改行文字を確認
+                if 'private_key' in credentials_info:
+                    pk = credentials_info['private_key']
+                    print(f"[DEBUG] Private key starts with: {pk[:50] if pk else 'None'}")
+                    print(f"[DEBUG] Private key ends with: {pk[-50:] if pk else 'None'}")
+                    print(f"[DEBUG] Private key contains \\n: {'\\n' in pk}")
+                    print(f"[DEBUG] Private key length: {len(pk) if pk else 0}")
+                    # 改行文字を修正する試み
+                    if '\\n' in pk:
+                        print("[DEBUG] Found escaped newlines, replacing...")
+                        credentials_info['private_key'] = pk.replace('\\n', '\n')
                 credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
                 print("[DEBUG] Successfully created credentials from environment variable")
             except json.JSONDecodeError as e:
