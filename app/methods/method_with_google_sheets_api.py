@@ -1,6 +1,6 @@
-import time
-import datetime
 import gspread
+import json
+import os
 from google.oauth2.service_account import Credentials
 from ..config import settings
 import sys
@@ -10,11 +10,6 @@ sys.path.append(str(Path(__file__).resolve().parent))
 
 class SheetsMethods:
     def __init__(self):
-        # * 環境設定から取得した相対パスを絶対パスに変換
-        credentials_path = Path(__file__).resolve().parent / settings.google_sheets_credentials_path
-        # * 読み込みエラーを避けるために絶対パスを使用
-        self.credentials_file = str(credentials_path)
-
         self.spread_sheet_key = settings.google_sheets_spread_sheet_key
         self.client = self._authorize()
         self.workbook = self._get_workbook()
@@ -24,7 +19,22 @@ class SheetsMethods:
             'https://www.googleapis.com/auth/spreadsheets',
             'https://www.googleapis.com/auth/drive'
         ]
-        credentials = Credentials.from_service_account_file(self.credentials_file, scopes=scopes)
+        # 環境変数から直接JSON文字列を取得する方法
+        if os.getenv('GOOGLE_SHEETS_CREDENTIALS_JSON'):
+            try:
+                credentials_info = json.loads(os.getenv('GOOGLE_SHEETS_CREDENTIALS_JSON'))
+                credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
+            except json.JSONDecodeError:
+                raise ValueError("Invalid JSON in GOOGLE_SHEETS_CREDENTIALS_JSON environment variable")
+        # ローカル開発用：ファイルパスから読み込む
+        elif settings.google_sheets_credentials_path and settings.google_sheets_credentials_path != 'default_value':
+            credentials_path = Path(__file__).resolve().parent / settings.google_sheets_credentials_path
+            if not credentials_path.exists():
+                credentials_path = Path(settings.google_sheets_credentials_path).resolve()
+            credentials = Credentials.from_service_account_file(str(credentials_path), scopes=scopes)
+        else:
+            raise ValueError("No Google Sheets credentials provided")
+
         return gspread.authorize(credentials)
 
     def _get_workbook(self):
