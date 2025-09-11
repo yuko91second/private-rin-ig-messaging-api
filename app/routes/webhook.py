@@ -18,13 +18,21 @@ router = APIRouter(
 FACEBOOK_PAGE_ID = settings.facebook_page_id
 FACEBOOK_PAGE_ACCESS_TOKEN = settings.facebook_page_access_token
 FACEBOOK_VERIFY_TOKEN = settings.facebook_verify_token
-sheets_methods = SheetsMethods()
+
+# SheetsMethodsの初期化を遅延させる
+sheets_methods = None
+
+def get_sheets_methods():
+    global sheets_methods
+    if sheets_methods is None:
+        sheets_methods = SheetsMethods()
+    return sheets_methods
 
 
 def get_response_message(sender_name: str, comment_text: str):
     today_dt_normal = datetime.datetime.now(timezone.utc)
     today_dt_jst = utils.convert_timezone_to_jst_forced(today_dt_normal)
-    response_rows_list_per_zodiac_sign = sheets_methods.get_response_rows_list_per_zodiac_sign()
+    response_rows_list_per_zodiac_sign = get_sheets_methods().get_response_rows_list_per_zodiac_sign()
     # ! response_rows_list_per_zodiac_signは二重配列になっているので注意！
     sender_zodiac_sign_id_num, sender_zodiac_sign_name = utils.identify_sender_zodiac_sign(comment_text)
     if sender_zodiac_sign_id_num == 0 and sender_zodiac_sign_name == 'unknown':
@@ -43,7 +51,7 @@ def get_response_message(sender_name: str, comment_text: str):
     today_color_means = today_color_means.rstrip('、')
     today_item_name = target_response_row[12]
     today_item_description = target_response_row[13]
-    fixed_form_sentences_list = sheets_methods.get_fixed_form_sentences()
+    fixed_form_sentences_list = get_sheets_methods().get_fixed_form_sentences()
     now_hour_number = utils.obtain_now_hour_number(today_dt_jst)
     today_date_str = utils.obtain_today_date_str(today_dt_jst)
     greeting_remarks = ''
@@ -172,12 +180,12 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
                     print('> Detected my own comments and passed the process.')
                     return Response(content='THROUGH_EVENT_DUE_TO_DETECTING_MYSELF', status_code=status.HTTP_200_OK)
                 if media_product_type == 'FEED':
-                    already_made_a_comment = sheets_methods.whether_already_made_a_comment(sender_user_name)
+                    already_made_a_comment = get_sheets_methods().whether_already_made_a_comment(sender_user_name)
                     if already_made_a_comment:
                         return Response(content='ALREADY_MADE_A_COMMENT', status_code=status.HTTP_200_OK)
                     send_dm(comment_id, sender_user_name, comment_text)
                     reply_to_comment_on_post(comment_id, sender_user_name, comment_text)
-                    bg_tasks.add_task(sheets_methods.insert_username_on_recipient_sheet, sender_user_name)
+                    bg_tasks.add_task(get_sheets_methods().insert_username_on_recipient_sheet, sender_user_name)
                 return Response(content='COMMENT_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
         if 'messaging' in entry_obj:
             messaging_whole_obj = entry_obj['messaging'][0]

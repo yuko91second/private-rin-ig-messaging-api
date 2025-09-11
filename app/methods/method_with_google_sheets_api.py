@@ -19,20 +19,40 @@ class SheetsMethods:
             'https://www.googleapis.com/auth/spreadsheets',
             'https://www.googleapis.com/auth/drive'
         ]
+        
+        # デバッグ情報を出力
+        print(f"[DEBUG] GOOGLE_SHEETS_CREDENTIALS_JSON exists: {os.getenv('GOOGLE_SHEETS_CREDENTIALS_JSON') is not None}")
+        print(f"[DEBUG] GOOGLE_SHEETS_CREDENTIALS_PATH from settings: {settings.google_sheets_credentials_path}")
+        
         # 環境変数から直接JSON文字列を取得する方法
         if os.getenv('GOOGLE_SHEETS_CREDENTIALS_JSON'):
             try:
-                credentials_info = json.loads(os.getenv('GOOGLE_SHEETS_CREDENTIALS_JSON'))
+                print("[DEBUG] Trying to load credentials from GOOGLE_SHEETS_CREDENTIALS_JSON environment variable")
+                credentials_json = os.getenv('GOOGLE_SHEETS_CREDENTIALS_JSON')
+                print(f"[DEBUG] JSON length: {len(credentials_json) if credentials_json else 0}")
+                credentials_info = json.loads(credentials_json)
+                print(f"[DEBUG] Parsed JSON keys: {list(credentials_info.keys()) if credentials_info else 'None'}")
                 credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
-            except json.JSONDecodeError:
-                raise ValueError("Invalid JSON in GOOGLE_SHEETS_CREDENTIALS_JSON environment variable")
+                print("[DEBUG] Successfully created credentials from environment variable")
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG] JSON decode error: {e}")
+                raise ValueError(f"Invalid JSON in GOOGLE_SHEETS_CREDENTIALS_JSON environment variable: {e}")
+            except Exception as e:
+                print(f"[DEBUG] Unexpected error: {e}")
+                raise
         # ローカル開発用：ファイルパスから読み込む
         elif settings.google_sheets_credentials_path and settings.google_sheets_credentials_path != 'default_value':
+            print("[DEBUG] Trying to load credentials from file path")
             credentials_path = Path(__file__).resolve().parent / settings.google_sheets_credentials_path
             if not credentials_path.exists():
                 credentials_path = Path(settings.google_sheets_credentials_path).resolve()
+            print(f"[DEBUG] Credentials path: {credentials_path}")
+            print(f"[DEBUG] File exists: {credentials_path.exists()}")
             credentials = Credentials.from_service_account_file(str(credentials_path), scopes=scopes)
+            print("[DEBUG] Successfully created credentials from file")
         else:
+            print("[DEBUG] No credentials provided!")
+            print(f"[DEBUG] Environment variables: {list(os.environ.keys())}")
             raise ValueError("No Google Sheets credentials provided")
 
         return gspread.authorize(credentials)
