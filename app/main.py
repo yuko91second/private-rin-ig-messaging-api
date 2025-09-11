@@ -21,7 +21,7 @@ app.include_router(webhook.router)
 
 @app.get('/')
 async def index():
-    return {'message': 'Hello World'}
+    return {'message': 'Hello World. This is Rin\'s ig  app.'}
 
 @app.get('/privacy')
 async def greet():
