@@ -9,3 +9,6 @@ app/methods/rin-hp-crud-01-*.json
 
 # Test files
 test_*.py
+
+# Documentation (contains sensitive setup info)
+SETUP_INSTRUCTIONS.md
