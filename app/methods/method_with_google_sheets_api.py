@@ -38,10 +38,14 @@ class SheetsMethods:
                     pk = credentials_info['private_key']
                     print(f"[DEBUG] Private key starts with: {pk[:50] if pk else 'None'}")
                     print(f"[DEBUG] Private key ends with: {pk[-50:] if pk else 'None'}")
-                    print(f"[DEBUG] Private key contains \\n: {'\\n' in pk}")
+                    # バックスラッシュを含む文字列はf-string外で処理
+                    newline_check = '\n' in pk
+                    escaped_newline_check = '\\n' in pk
+                    print(f"[DEBUG] Private key contains newline: {newline_check}")
+                    print(f"[DEBUG] Private key contains escaped newline: {escaped_newline_check}")
                     print(f"[DEBUG] Private key length: {len(pk) if pk else 0}")
                     # 改行文字を修正する試み
-                    if '\\n' in pk:
+                    if escaped_newline_check:
                         print("[DEBUG] Found escaped newlines, replacing...")
                         credentials_info['private_key'] = pk.replace('\\n', '\n')
                 credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
