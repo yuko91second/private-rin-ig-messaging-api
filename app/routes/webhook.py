@@ -1,8 +1,10 @@
 import json
 import requests
 import datetime
+import hmac
+import hashlib
 from datetime import timezone
-from fastapi import APIRouter, Response, Query, status, BackgroundTasks
+from fastapi import APIRouter, Response, Query, status, BackgroundTasks, Request
 from pydantic import BaseModel
 from typing import Any
 from .. import utils
@@ -26,7 +28,8 @@ def get_response_message(sender_name: str, comment_text: str):
     today_dt_jst = utils.convert_timezone_to_jst_forced(today_dt_normal)
     response_rows_list_per_zodiac_sign = sheets_methods.get_response_rows_list_per_zodiac_sign()
     # ! response_rows_list_per_zodiac_signは二重配列になっているので注意！
-    sender_zodiac_sign_id_num, sender_zodiac_sign_name = utils.identify_sender_zodiac_sign(comment_text)
+    sender_zodiac_sign_id_num, sender_zodiac_sign_name = utils.identify_sender_zodiac_sign(
+        comment_text)
     if sender_zodiac_sign_id_num == 0 and sender_zodiac_sign_name == 'unknown':
         print('No zodiac sign detected in the comment.')
         return Response(content='ZODIAC_SIGN_NOT_DETECTED', status_code=status.HTTP_200_OK)
@@ -75,12 +78,15 @@ def send_dm(comment_id, username, message):
         if response.status_code == 200:
             print("Direct message sent successfully.")
         else:
-            print(f"Failed to send direct message. Status code: {response.status_code}")
+            print(
+                f"Failed to send direct message. Status code: {response.status_code}")
             print(f"Response content: {response.text}")
     except requests.exceptions.RequestException as e:
-        print(f"An error occurred while sending the direct message (RequestException): {e}")
+        print(
+            f"An error occurred while sending the direct message (RequestException): {e}")
     except Exception as e:
-        print(f"An unexpected error occurred while sending the direct message: {e}")
+        print(
+            f"An unexpected error occurred while sending the direct message: {e}")
 
 
 def reply_to_comment_on_post(comment_id, username, comment_text):
@@ -102,24 +108,29 @@ def reply_to_comment_on_post(comment_id, username, comment_text):
         if response.status_code == 200:
             print("Reply comment sent successfully.")
         else:
-            print(f"Failed to reply comment. Status code: {response.status_code}")
+            print(
+                f"Failed to reply comment. Status code: {response.status_code}")
             print(f"Response content: {response.text}")
             response_dict = json.loads(response.text)
             if response.status_code == 400 and 'error' in response_dict and response_dict['error']['message'] == 'This API call does not support the requested response format' and response_dict['error']['code'] == 20 and response_dict['error']['error_subcode'] == 1772179:
                 # * メンションNGのエラーの場合、メンション形式じゃないリプライを再送信
                 print('Retry replies without mention.')
-                reply_msg = utils.obtain_simple_reply_message(username, mention_allowed=False)
-                data = { 'message': reply_msg }
+                reply_msg = utils.obtain_simple_reply_message(
+                    username, mention_allowed=False)
+                data = {'message': reply_msg}
                 response = requests.post(url, params=params, json=data)
                 if response.status_code == 200:
                     print("Reply comment sent successfully.")
                 else:
-                    print(f"Failed to reply comment. Status code: {response.status_code}")
+                    print(
+                        f"Failed to reply comment. Status code: {response.status_code}")
                     print(f"Response content: {response.text}")
     except requests.exceptions.RequestException as e:
-        print(f"An error occurred while replying to the comment (RequestException): {e}")
+        print(
+            f"An error occurred while replying to the comment (RequestException): {e}")
     except Exception as e:
-        print(f"An unexpected error occurred while replying to the comment: {e}")
+        print(
+            f"An unexpected error occurred while replying to the comment: {e}")
 
 
 def sendCustomerAMessage(page_id, response, page_token, psid):
@@ -129,6 +140,16 @@ def sendCustomerAMessage(page_id, response, page_token, psid):
     response = requests.post(url)
     print(f'> response.json():', response.json())
     return response.json()
+
+
+def verify_facebook_signature(payload: str, signature: str, secret: str) -> bool:
+    """Facebookからのリクエストか検証"""
+    expected_signature = 'sha256=' + hmac.new(
+        secret.encode('utf-8'),
+        payload.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(signature, expected_signature)
 
 
 @router.get("/webhook/messaging-webhook")
@@ -146,7 +167,8 @@ async def get_webhook(hub_mode: str = Query(..., alias="hub.mode"), hub_verify_t
 def custom_encoder(obj: Any) -> Any:
     if isinstance(obj, BaseModel):
         return obj.model_dump()  # type: ignore
-    raise TypeError(f'Object of type {obj.__class__.__name__} is not JSON serializable')
+    raise TypeError(
+        f'Object of type {obj.__class__.__name__} is not JSON serializable')
 
 
 @router.post("/webhook/messaging-webhook")
@@ -172,12 +194,15 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
                     print('> Detected my own comments and passed the process.')
                     return Response(content='THROUGH_EVENT_DUE_TO_DETECTING_MYSELF', status_code=status.HTTP_200_OK)
                 if media_product_type == 'FEED':
-                    already_made_a_comment = sheets_methods.whether_already_made_a_comment(sender_user_name)
+                    already_made_a_comment = sheets_methods.whether_already_made_a_comment(
+                        sender_user_name)
                     if already_made_a_comment:
                         return Response(content='ALREADY_MADE_A_COMMENT', status_code=status.HTTP_200_OK)
                     send_dm(comment_id, sender_user_name, comment_text)
-                    reply_to_comment_on_post(comment_id, sender_user_name, comment_text)
-                    bg_tasks.add_task(sheets_methods.insert_username_on_recipient_sheet, sender_user_name)
+                    reply_to_comment_on_post(
+                        comment_id, sender_user_name, comment_text)
+                    bg_tasks.add_task(
+                        sheets_methods.insert_username_on_recipient_sheet, sender_user_name)
                 return Response(content='COMMENT_EVENT_RECEIVED', status_code=status.HTTP_200_OK)
         if 'messaging' in entry_obj:
             messaging_whole_obj = entry_obj['messaging'][0]
@@ -189,3 +214,42 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
         # return Response(content='EVENT_RECEIVED', status_code=status.HTTP_200_OK)
     else:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
+
+
+@router.post("/data-deletion-callback")
+async def data_deletion_callback(request: Request):
+    """
+    Facebookからのデータ削除リクエストを処理
+    実際には削除するデータがないが、Facebookの要求に応じて実装
+    """
+    try:
+        # リクエストボディを取得
+        body = await request.body()
+        body_str = body.decode('utf-8')
+
+        # Facebookからの署名を検証
+        signature = request.headers.get('X-Hub-Signature-256', '')
+        if not verify_facebook_signature(body_str, signature, FACEBOOK_VERIFY_TOKEN):
+            print("Invalid Facebook signature for data deletion callback")
+            return Response(status_code=401, content="Unauthorized")
+
+        # データをパース
+        data = json.loads(body_str)
+        user_id = data.get('user_id')
+
+        print(f"> Data deletion request received for user ID: {user_id}")
+
+        # 実際には削除するデータがないが、ログに記録
+        print(f"> No user data to delete for ID: {user_id}")
+        print(f"> This app does not store user data, so no deletion is necessary")
+
+        # Facebookに削除完了を通知
+        return {
+            "status": "success",
+            "message": "No user data found to delete",
+            "user_id": user_id
+        }
+
+    except Exception as e:
+        print(f"> Error in data deletion callback: {e}")
+        return Response(status_code=500, content="Internal Server Error")
