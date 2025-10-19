@@ -20,6 +20,7 @@ router = APIRouter(
 FACEBOOK_PAGE_ID = settings.facebook_page_id
 FACEBOOK_PAGE_ACCESS_TOKEN = settings.facebook_page_access_token
 FACEBOOK_VERIFY_TOKEN = settings.facebook_verify_token
+FACEBOOK_API_LATEST_VERSION = settings.facebook_api_latest_version
 sheets_methods = SheetsMethods()
 
 
@@ -63,7 +64,7 @@ def get_response_message(sender_name: str, comment_text: str):
 def send_dm(comment_id, username, message):
     # * DM送信用関数
     response_msg = get_response_message(username, message)
-    url = f'https://graph.facebook.com/v20.0/{FACEBOOK_PAGE_ID}/messages'
+    url = f'https://graph.facebook.com/{FACEBOOK_API_LATEST_VERSION}/{FACEBOOK_PAGE_ID}/messages'
     data = {
         'recipient': {
             'comment_id': comment_id
@@ -96,7 +97,7 @@ def reply_to_comment_on_post(comment_id, username, comment_text):
         reply_msg = utils.obtain_simple_reply_message(username)
     else:
         reply_msg = utils.obtain_lucky_reply_message(username)
-    url = f'https://graph.facebook.com/v20.0/{comment_id}/replies'
+    url = f'https://graph.facebook.com/{FACEBOOK_API_LATEST_VERSION}/{comment_id}/replies'
     params = {
         'access_token': FACEBOOK_PAGE_ACCESS_TOKEN
     }
@@ -135,7 +136,7 @@ def reply_to_comment_on_post(comment_id, username, comment_text):
 
 def sendCustomerAMessage(page_id, response, page_token, psid):
     new_response = response.replace("", r"\'")
-    url = f"https://graph.facebook.com/v20.0/{page_id}/messages?recipient={{'id': '{psid}'}}&message={{'text': '{new_response}'}}&messaging_type=RESPONSE&access_token={page_token}"
+    url = f"https://graph.facebook.com/{FACEBOOK_API_LATEST_VERSION}/{page_id}/messages?recipient={{'id': '{psid}'}}&message={{'text': '{new_response}'}}&messaging_type=RESPONSE&access_token={page_token}"
     print('> request url:', url)
     response = requests.post(url)
     print(f'> response.json():', response.json())

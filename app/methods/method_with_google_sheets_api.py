@@ -17,7 +17,6 @@ class SheetsMethods:
             'https://www.googleapis.com/auth/spreadsheets',
             'https://www.googleapis.com/auth/drive'
         ]
-        
         # 環境変数からBase64エンコードされた認証情報を取得
         if os.getenv('GOOGLE_SHEETS_CREDENTIALS_BASE64'):
             credentials_base64 = os.getenv('GOOGLE_SHEETS_CREDENTIALS_BASE64')
@@ -28,7 +27,6 @@ class SheetsMethods:
         else:
             credentials_path = Path(__file__).resolve().parent / settings.google_sheets_credentials_path
             credentials = Credentials.from_service_account_file(str(credentials_path), scopes=scopes)
-        
         return gspread.authorize(credentials)
 
     def _get_workbook(self):
