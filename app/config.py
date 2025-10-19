@@ -2,12 +2,15 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    facebook_page_id: str = '128170000177681'
-    facebook_page_access_token: str = 'EAAM4sCOqR98BPW7rD2uWU316HR4jX9YTj11CKBh7nH3ZAIFet8imJZATQAU2IKiM5s6qKTuZAbuLeSt6PXiO7jJjESCr8t3iDvKFn5kEtyKC9fld3fkZC9MrSKLTQDwVdDCSgPLjl2Em3JLtSUGE5hdMFwZAaE6g334SeCX8xCX3wAGzTneJSsxKJgguwkgGb7IC11Lh78NCwToFSACyWpkYZD'
-    facebook_verify_token: str = 'rin080902'
+    # Facebook関連の設定
+    facebook_page_id: str
+    facebook_page_access_token: str
+    facebook_verify_token: str
     facebook_api_latest_version: str = 'v24.0'
-    google_sheets_credentials_path: str = 'rin-hp-crud-01-2a1820940bdb.json'
-    google_sheets_spread_sheet_key: str = '1iaK0si5CniF3jaitvroSm0RAirM3jOLNZQDo7HU9aK0'
+
+    # Google Sheets関連の設定
+    google_sheets_credentials_path: str
+    google_sheets_spread_sheet_key: str
 
     class Config:
         env_file = '.env'
