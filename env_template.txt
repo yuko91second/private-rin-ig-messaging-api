@@ -5,5 +5,9 @@ FACEBOOK_VERIFY_TOKEN=your_facebook_verify_token_here
 FACEBOOK_API_LATEST_VERSION=v24.0
 
 # Google Sheets関連の設定
-GOOGLE_SHEETS_CREDENTIALS_PATH=your_google_sheets_credentials_file_path_here
+# 本番環境（Render.com）では以下を設定
+GOOGLE_SHEETS_CREDENTIALS_BASE64=your_base64_encoded_credentials_here
 GOOGLE_SHEETS_SPREAD_SHEET_KEY=your_google_sheets_spreadsheet_key_here
+
+# ローカル開発用（本番環境では不要）
+GOOGLE_SHEETS_CREDENTIALS_PATH=rin-hp-crud-01-2a1820940bdb.json

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     facebook_api_latest_version: str = 'v24.0'
 
     # Google Sheets関連の設定
-    google_sheets_credentials_path: str
+    google_sheets_credentials_path: str = 'rin-hp-crud-01-2a1820940bdb.json'  # ローカル開発用のデフォルト値
     google_sheets_spread_sheet_key: str
 
     class Config:
