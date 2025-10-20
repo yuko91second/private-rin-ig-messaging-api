@@ -61,8 +61,8 @@ def get_response_message(sender_name: str, comment_text: str):
     return response_message
 
 
-def send_dm(igsid, username, message):
-    # * DM送信用関数
+def send_dm(comment_id, username, message):
+    # * DM送信用関数（comment_idを使用したPrivate Reply方式）
     response_msg = get_response_message(username, message)
 
     # 星座が検出されなかった場合はDMを送信しない
@@ -71,9 +71,9 @@ def send_dm(igsid, username, message):
         return False
 
     url = f'https://graph.facebook.com/{FACEBOOK_API_LATEST_VERSION}/{FACEBOOK_PAGE_ID}/messages'
-    data = {
+    params = {
         'recipient': {
-            'id': igsid
+            'comment_id': comment_id
         },
         'message': {
             'text': response_msg
@@ -81,7 +81,7 @@ def send_dm(igsid, username, message):
         'access_token': FACEBOOK_PAGE_ACCESS_TOKEN
     }
     try:
-        response = requests.post(url, json=data)
+        response = requests.post(url, json=params)
         if response.status_code == 200:
             print("Direct message sent successfully.")
             print(f"Response: {response.json()}")
@@ -194,7 +194,6 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
             if changes_obj and change_field_str == 'comments':
                 change_data = changes_obj['value']
                 sender_user_name = change_data['from']['username']
-                sender_igsid = change_data['from']['id']
                 media_product_type = change_data['media']['media_product_type']
                 comment_id = change_data['id']
                 comment_text = change_data['text']
@@ -207,7 +206,7 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
                         sender_user_name)
                     if already_made_a_comment:
                         return Response(content='ALREADY_MADE_A_COMMENT', status_code=status.HTTP_200_OK)
-                    send_dm(sender_igsid, sender_user_name, comment_text)
+                    send_dm(comment_id, sender_user_name, comment_text)
                     reply_to_comment_on_post(
                         comment_id, sender_user_name, comment_text)
                     bg_tasks.add_task(
