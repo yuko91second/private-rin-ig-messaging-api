@@ -106,13 +106,18 @@ def send_dm(comment_id, username, message):
         return False
 
 
-def reply_to_comment_on_post(comment_id, username, comment_text):
+def reply_to_comment_on_post(comment_id, username, comment_text, is_second_time=False):
     # * コメントへのリプライ用関数
-    zodiac_sign_id_num, _ = utils.identify_sender_zodiac_sign(comment_text)
-    if zodiac_sign_id_num == 0:
+    if is_second_time:
+        # 2回目以降: 星座に関係なくシンプルな返信（バリエーションあり）
         reply_msg = utils.obtain_simple_reply_message(username)
     else:
-        reply_msg = utils.obtain_lucky_reply_message(username)
+        # 1回目: 星座に応じた返信
+        zodiac_sign_id_num, _ = utils.identify_sender_zodiac_sign(comment_text)
+        if zodiac_sign_id_num == 0:
+            reply_msg = utils.obtain_simple_reply_message(username)
+        else:
+            reply_msg = utils.obtain_lucky_reply_message(username)
     url = f'https://graph.facebook.com/{FACEBOOK_API_LATEST_VERSION}/{comment_id}/replies'
     params = {
         'access_token': FACEBOOK_PAGE_ACCESS_TOKEN
@@ -165,7 +170,7 @@ async def get_webhook(hub_mode: str = Query(..., alias="hub.mode"), hub_verify_t
     if hub_mode and hub_verify_token:
         print('> hub_mode:', hub_mode)
         print('> hub_verify_token:', hub_verify_token)
-        if hub_mode == 'subscribe' and hub_verify_token == 'rin080902':
+        if hub_mode == 'subscribe' and hub_verify_token == FACEBOOK_VERIFY_TOKEN:
             return Response(content=hub_challenge, status_code=status.HTTP_200_OK)
         else:
             return Response(status_code=status.HTTP_403_FORBIDDEN)
@@ -205,10 +210,14 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
                     already_made_a_comment = sheets_methods.whether_already_made_a_comment(
                         sender_user_name)
                     if already_made_a_comment:
+                        # 2回目以降: DMは送らず、コメント返信のみ行う
+                        reply_to_comment_on_post(
+                            comment_id, sender_user_name, comment_text, is_second_time=True)
                         return Response(content='ALREADY_MADE_A_COMMENT', status_code=status.HTTP_200_OK)
+                    # 1回目: DMとコメント返信の両方を行う
                     send_dm(comment_id, sender_user_name, comment_text)
                     reply_to_comment_on_post(
-                        comment_id, sender_user_name, comment_text)
+                        comment_id, sender_user_name, comment_text, is_second_time=False)
                     bg_tasks.add_task(
                         sheets_methods.insert_username_on_recipient_sheet, sender_user_name)
                 return Response(content='COMMENT_EVENT_RECEIVED', status_code=status.HTTP_200_OK)

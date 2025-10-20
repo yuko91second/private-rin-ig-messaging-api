@@ -40,7 +40,8 @@ def convert_timezone_to_jst_forced(target_dt: datetime.datetime) -> datetime.dat
     if target_dt.tzinfo == jst_zone:
         # タイムゾーンがJSTの場合はそのまま返す
         return target_dt
-    elif target_dt.tzinfo == timezone.utc or (target_dt.tzinfo is not None and target_dt.tzinfo.utcoffset() == timezone.utc.utcoffset()): # type: ignore
+    # type: ignore
+    elif target_dt.tzinfo == timezone.utc or (target_dt.tzinfo is not None and target_dt.tzinfo.utcoffset() == timezone.utc.utcoffset()):
         # タイムゾーンがUTCの場合は9時間進めてJSTに変換して返す
         target_dt = target_dt + datetime.timedelta(hours=9)
         target_dt.astimezone(jst_zone)
@@ -99,12 +100,18 @@ def obtain_simple_reply_message(username: str, mention_allowed: bool = True):
         f'@{username}さん、コメントありがとうございます♡ステキな1日になりますように✨',
         f'@{username}さん、コメントありがとうございます！幸せがたくさん訪れますように🍀',
         f'@{username}さん、コメントありがとうございます！充実した1日をお過ごしくださいね🌈',
+        f'@{username}さん、コメントありがとうございます！笑顔いっぱいの1日になりますように😊✨',
+        f'@{username}さん、コメントありがとうございます！素晴らしい1日をお過ごしください🌟',
+        f'@{username}さん、コメントありがとうございます！今日もあなたらしく輝いてくださいね💫',
     ]
     not_mentioned_msg_list = [
         f'{username}さん、コメントありがとうございます！今日も頑張りましょうねっ💗^^',
         f'{username}さん、コメントありがとうございます♡ステキな1日になりますように✨',
         f'{username}さん、コメントありがとうございます！幸せがたくさん訪れますように🍀',
         f'{username}さん、コメントありがとうございます！充実した1日をお過ごしくださいね🌈',
+        f'{username}さん、コメントありがとうございます！笑顔いっぱいの1日になりますように😊✨',
+        f'{username}さん、コメントありがとうございます！素晴らしい1日をお過ごしください🌟',
+        f'{username}さん、コメントありがとうございます！今日もあなたらしく輝いてくださいね💫',
     ]
     # * ランダムにメッセージを1つ取得
     if mention_allowed:
@@ -120,6 +127,9 @@ def obtain_lucky_reply_message(username: str):
         f'@{username} コメントありがとうございます！DM送らせていただきました💌^^',
         f'@{username} コメントありがとうございます💗DM送りましたので、ご確認くださいね♪',
         f'@{username} コメントありがとうございます✨DM送りましたので、ご確認くださいね♡',
+        f'@{username} コメントありがとうございます😊DM送らせていただきました🌟ご確認ください♡',
+        f'@{username} コメントありがとうございます🌈DM送りましたので、チェックしてくださいね💫',
+        f'@{username} コメントありがとうございます💕DM送らせていただきました✨ぜひご覧ください^^',
     ]
     # * ランダムにメッセージを1つ取得
     random_msg = random.choice(msg_list)
