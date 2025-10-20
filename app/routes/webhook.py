@@ -61,13 +61,13 @@ def get_response_message(sender_name: str, comment_text: str):
     return response_message
 
 
-def send_dm(comment_id, username, message):
+def send_dm(igsid, username, message):
     # * DM送信用関数
     response_msg = get_response_message(username, message)
     url = f'https://graph.facebook.com/{FACEBOOK_API_LATEST_VERSION}/{FACEBOOK_PAGE_ID}/messages'
     data = {
         'recipient': {
-            'comment_id': comment_id
+            'id': igsid
         },
         'message': {
             'text': response_msg
@@ -78,10 +78,16 @@ def send_dm(comment_id, username, message):
         response = requests.post(url, json=data)
         if response.status_code == 200:
             print("Direct message sent successfully.")
+            print(f"Response: {response.json()}")
         else:
             print(
                 f"Failed to send direct message. Status code: {response.status_code}")
             print(f"Response content: {response.text}")
+            try:
+                error_data = response.json()
+                print(f"Error details: {json.dumps(error_data, indent=2)}")
+            except Exception:
+                pass
     except requests.exceptions.RequestException as e:
         print(
             f"An error occurred while sending the direct message (RequestException): {e}")
@@ -134,15 +140,6 @@ def reply_to_comment_on_post(comment_id, username, comment_text):
             f"An unexpected error occurred while replying to the comment: {e}")
 
 
-def sendCustomerAMessage(page_id, response, page_token, psid):
-    new_response = response.replace("", r"\'")
-    url = f"https://graph.facebook.com/{FACEBOOK_API_LATEST_VERSION}/{page_id}/messages?recipient={{'id': '{psid}'}}&message={{'text': '{new_response}'}}&messaging_type=RESPONSE&access_token={page_token}"
-    print('> request url:', url)
-    response = requests.post(url)
-    print(f'> response.json():', response.json())
-    return response.json()
-
-
 def verify_facebook_signature(payload: str, signature: str, secret: str) -> bool:
     """Facebookからのリクエストか検証"""
     expected_signature = 'sha256=' + hmac.new(
@@ -187,6 +184,7 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
             if changes_obj and change_field_str == 'comments':
                 change_data = changes_obj['value']
                 sender_user_name = change_data['from']['username']
+                sender_igsid = change_data['from']['id']
                 media_product_type = change_data['media']['media_product_type']
                 comment_id = change_data['id']
                 comment_text = change_data['text']
@@ -199,7 +197,7 @@ async def post_webhook(body: WebhookEvent, bg_tasks: BackgroundTasks):
                         sender_user_name)
                     if already_made_a_comment:
                         return Response(content='ALREADY_MADE_A_COMMENT', status_code=status.HTTP_200_OK)
-                    send_dm(comment_id, sender_user_name, comment_text)
+                    send_dm(sender_igsid, sender_user_name, comment_text)
                     reply_to_comment_on_post(
                         comment_id, sender_user_name, comment_text)
                     bg_tasks.add_task(
