@@ -220,20 +220,52 @@ async def data_deletion_callback(request: Request):
     """
     Facebookからのデータ削除リクエストを処理
     実際には削除するデータがないが、Facebookの要求に応じて実装
+
+    参考: https://developers.facebook.com/docs/development/create-an-app/app-dashboard/data-deletion-callback
     """
     try:
-        # リクエストボディを取得
-        body = await request.body()
-        body_str = body.decode('utf-8')
+        # リクエストボディを取得（form-dataとして送られてくる）
+        form_data = await request.form()
+        signed_request = form_data.get('signed_request')
 
-        # Facebookからの署名を検証
-        signature = request.headers.get('X-Hub-Signature-256', '')
-        if not verify_facebook_signature(body_str, signature, FACEBOOK_VERIFY_TOKEN):
-            print("Invalid Facebook signature for data deletion callback")
-            return Response(status_code=401, content="Unauthorized")
+        if not signed_request:
+            print("No signed_request found in request")
+            return Response(status_code=400, content="Bad Request: No signed_request")
 
-        # データをパース
-        data = json.loads(body_str)
+        # signed_requestをパース
+        try:
+            encoded_sig, payload = signed_request.split('.', 2)
+        except ValueError:
+            print("Invalid signed_request format")
+            return Response(status_code=400, content="Bad Request: Invalid signed_request format")
+
+        # Base64デコード（URL-safe）
+        import base64
+
+        def base64_url_decode(input_str):
+            """URL-safe base64デコード"""
+            # パディングを追加
+            padding = 4 - len(input_str) % 4
+            if padding != 4:
+                input_str += '=' * padding
+            return base64.urlsafe_b64decode(input_str)
+
+        # 署名検証
+        expected_sig = hmac.new(
+            settings.facebook_page_access_token.encode('utf-8'),
+            payload.encode('utf-8'),
+            hashlib.sha256
+        ).digest()
+
+        sig = base64_url_decode(encoded_sig)
+
+        if sig != expected_sig:
+            print("Invalid signature for data deletion callback")
+            return Response(status_code=401, content="Unauthorized: Invalid signature")
+
+        # ペイロードをデコードしてパース
+        decoded_payload = base64_url_decode(payload)
+        data = json.loads(decoded_payload)
         user_id = data.get('user_id')
 
         print(f"> Data deletion request received for user ID: {user_id}")
@@ -242,13 +274,40 @@ async def data_deletion_callback(request: Request):
         print(f"> No user data to delete for ID: {user_id}")
         print(f"> This app does not store user data, so no deletion is necessary")
 
-        # Facebookに削除完了を通知
-        return {
-            "status": "success",
-            "message": "No user data found to delete",
-            "user_id": user_id
+        # Meta要求の形式でレスポンスを返す
+        # url: ユーザーが削除ステータスを確認できるURL
+        # confirmation_code: 削除リクエストの確認コード
+        import secrets
+        confirmation_code = secrets.token_hex(16)  # ランダムな確認コード生成
+
+        # 削除ステータス確認用のURL（実際のアプリのURLに変更してください）
+        status_url = f"https://rin-uranai-api.onrender.com/deletion-status?id={confirmation_code}"
+
+        response_data = {
+            "url": status_url,
+            "confirmation_code": confirmation_code
         }
+
+        print(f"> Deletion request acknowledged: {response_data}")
+
+        return response_data
 
     except Exception as e:
         print(f"> Error in data deletion callback: {e}")
+        import traceback
+        traceback.print_exc()
         return Response(status_code=500, content="Internal Server Error")
+
+
+@router.get("/deletion-status")
+async def deletion_status(id: str = Query(...)):
+    """
+    データ削除リクエストのステータス確認ページ
+    ユーザーがデータ削除の状況を確認するためのエンドポイント
+    """
+    return {
+        "status": "completed",
+        "message": "このアプリはユーザーデータを保存していないため、削除するデータはありません。",
+        "confirmation_code": id,
+        "note": "This app does not store user data, so there is no data to delete."
+    }
