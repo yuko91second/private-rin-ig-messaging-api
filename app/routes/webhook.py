@@ -33,11 +33,11 @@ def get_response_message(sender_name: str, comment_text: str):
         comment_text)
     if sender_zodiac_sign_id_num == 0 and sender_zodiac_sign_name == 'unknown':
         print('No zodiac sign detected in the comment.')
-        return Response(content='ZODIAC_SIGN_NOT_DETECTED', status_code=status.HTTP_200_OK)
+        return None
     target_response_row = response_rows_list_per_zodiac_sign[sender_zodiac_sign_id_num - 1]
     if sender_zodiac_sign_name != target_response_row[1]:
         # 正しい配列を取得しているかチェック
-        return Response(content='ZODIAC_SIGN_NOT_MATCH', status_code=status.HTTP_200_OK)
+        return None
     today_color_name = target_response_row[3]
     today_color_name_ja = target_response_row[4]
     random_four_numbers_for_color_means = utils.get_random_four_numbers()
@@ -64,6 +64,12 @@ def get_response_message(sender_name: str, comment_text: str):
 def send_dm(igsid, username, message):
     # * DM送信用関数
     response_msg = get_response_message(username, message)
+
+    # 星座が検出されなかった場合はDMを送信しない
+    if response_msg is None:
+        print("Skipping DM: No valid response message generated")
+        return False
+
     url = f'https://graph.facebook.com/{FACEBOOK_API_LATEST_VERSION}/{FACEBOOK_PAGE_ID}/messages'
     data = {
         'recipient': {
@@ -79,6 +85,7 @@ def send_dm(igsid, username, message):
         if response.status_code == 200:
             print("Direct message sent successfully.")
             print(f"Response: {response.json()}")
+            return True
         else:
             print(
                 f"Failed to send direct message. Status code: {response.status_code}")
@@ -88,12 +95,15 @@ def send_dm(igsid, username, message):
                 print(f"Error details: {json.dumps(error_data, indent=2)}")
             except Exception:
                 pass
+            return False
     except requests.exceptions.RequestException as e:
         print(
             f"An error occurred while sending the direct message (RequestException): {e}")
+        return False
     except Exception as e:
         print(
             f"An unexpected error occurred while sending the direct message: {e}")
+        return False
 
 
 def reply_to_comment_on_post(comment_id, username, comment_text):
